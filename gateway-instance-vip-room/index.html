@@ -191,7 +191,7 @@
     }
 
     .side-item.active {
-      padding-left: 49px;
+      padding-left: 24px;
       background: var(--primary-color);
       color: #fff;
     }
@@ -199,6 +199,12 @@
     .side-item.sub {
       padding-left: 49px;
       background: var(--side-sub-bg);
+    }
+
+    .side-item.sub.active {
+      padding-left: 49px;
+      background: var(--primary-color);
+      color: #fff;
     }
 
     .side-collapse {
@@ -521,13 +527,14 @@
     <div class="side-title">负载均衡 SCLB</div>
     <ul class="side-menu">
       <li class="side-item">⌘ 概览页</li>
-      <li class="side-item group">♧ 四层负载均衡 <span style="margin-left:auto;">⌃</span></li>
-      <li class="side-item active">实例管理</li>
-      <li class="side-item sub">服务器组</li>
-      <li class="side-item">☷ 七层应用网关 <span style="margin-left:auto;">⌄</span></li>
-      <li class="side-item">↺ 托管实例 <span style="margin-left:auto;">⌄</span></li>
-      <li class="side-item">⚙ 告警策略管理 <span style="margin-left:auto;">⌄</span></li>
-      <li class="side-item">▧ 申请管理 <span style="margin-left:auto;">⌄</span></li>
+      <li class="side-item group">♧ 四层负载均衡 <span style="margin-left:auto;">⌄</span></li>
+      <li class="side-item group">☷ 七层应用网关 <span style="margin-left:auto;">⌃</span></li>
+      <li class="side-item sub active">网关实例</li>
+      <li class="side-item sub">服务项目</li>
+      <li class="side-item sub">自定义插件</li>
+      <li class="side-item group">↺ 托管实例 <span style="margin-left:auto;">⌄</span></li>
+      <li class="side-item group">⚙ 告警策略管理 <span style="margin-left:auto;">⌄</span></li>
+      <li class="side-item group">▧ 申请管理 <span style="margin-left:auto;">⌄</span></li>
     </ul>
     <div class="side-collapse">‹</div>
   </aside>
@@ -620,8 +627,6 @@
                   <tr>
                     <th></th>
                     <th>规格</th>
-                    <th>最大并发连接数</th>
-                    <th>每秒新建连接数</th>
                     <th>每秒查询个数</th>
                   </tr>
                 </thead>
@@ -629,23 +634,12 @@
                   <tr>
                     <td><input type="radio" name="spec" value="基础型" /></td>
                     <td>基础型</td>
-                    <td>50000</td>
-                    <td>2000</td>
-                    <td>30000</td>
+                    <td>15000</td>
                   </tr>
                   <tr>
                     <td><input type="radio" name="spec" value="标准型" /></td>
                     <td>标准型</td>
-                    <td>60000</td>
-                    <td>2000</td>
-                    <td>50000</td>
-                  </tr>
-                  <tr>
-                    <td><input type="radio" name="spec" value="增强型" /></td>
-                    <td>增强型</td>
-                    <td>120000</td>
-                    <td>4000</td>
-                    <td>100000</td>
+                    <td>30000</td>
                   </tr>
                 </tbody>
               </table>
