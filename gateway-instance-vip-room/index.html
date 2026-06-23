@@ -1,0 +1,730 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>负载均衡实例申请原型</title>
+  <style>
+    :root {
+      --primary-color: #1890ff;
+      --top-bg: #001529;
+      --side-bg: #001529;
+      --side-sub-bg: #000c17;
+      --page-bg: #f2f6f9;
+      --text-color: #262626;
+      --muted-color: #8c8c8c;
+      --border-color: #d9d9d9;
+      --table-border: #f0f0f0;
+      --danger-color: #ff4d4f;
+      --top-height: 48px;
+      --side-width: 200px;
+      --form-width: 980px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 1280px;
+      min-height: 100vh;
+      color: var(--text-color);
+      background: var(--page-bg);
+      font-family: "PingFang SC", "Helvetica Neue", "Hiragino Sans GB", Arial, "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .topbar {
+      position: fixed;
+      z-index: 10;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--top-height);
+      display: flex;
+      align-items: center;
+      background: var(--top-bg);
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .brand {
+      width: var(--side-width);
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding-left: 10px;
+      gap: 8px;
+      color: #fff;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 18px;
+      position: relative;
+    }
+
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      border: 2px solid #1da7ff;
+      border-radius: 16px 16px 0 0;
+      border-bottom: 0;
+    }
+
+    .brand-mark::before {
+      left: 0;
+      bottom: 0;
+      width: 18px;
+      height: 12px;
+    }
+
+    .brand-mark::after {
+      right: 0;
+      bottom: 0;
+      width: 15px;
+      height: 16px;
+    }
+
+    .top-menu {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .top-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .top-icon {
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 14px;
+    }
+
+    .top-search {
+      margin-left: auto;
+      width: 310px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 13px;
+    }
+
+    .top-actions {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 0 14px;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    .avatar {
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: var(--primary-color);
+      color: #fff;
+      font-size: 13px;
+    }
+
+    .layout {
+      min-height: 100vh;
+      padding-top: var(--top-height);
+      padding-left: var(--side-width);
+    }
+
+    .sidebar {
+      position: fixed;
+      top: var(--top-height);
+      bottom: 0;
+      left: 0;
+      width: var(--side-width);
+      background: var(--side-bg);
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    .side-title {
+      height: 49px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .side-menu {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .side-item {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 24px;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 14px;
+    }
+
+    .side-item.group {
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .side-item.active {
+      padding-left: 49px;
+      background: var(--primary-color);
+      color: #fff;
+    }
+
+    .side-item.sub {
+      padding-left: 49px;
+      background: var(--side-sub-bg);
+    }
+
+    .side-collapse {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #002140;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 22px;
+    }
+
+    .main {
+      min-height: calc(100vh - var(--top-height));
+      background: var(--page-bg);
+    }
+
+    .page-header {
+      height: 64px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 32px;
+    }
+
+    .page-content {
+      margin: 16px;
+      min-height: 458px;
+      padding: 20px 0 10px;
+      background: #fff;
+    }
+
+    .form {
+      width: var(--form-width);
+      margin-left: 200px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr);
+      column-gap: 8px;
+      align-items: start;
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      padding-top: 5px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .required {
+      color: var(--danger-color);
+      margin-right: 4px;
+      font-family: SimSun, sans-serif;
+    }
+
+    .control-line {
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .radio,
+    .checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 32px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    input[type="radio"],
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--primary-color);
+      cursor: pointer;
+    }
+
+    .native-checkbox {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--border-color);
+      background: #fff;
+    }
+
+    .native-checkbox:checked {
+      border-color: var(--primary-color);
+      background: linear-gradient(var(--primary-color), var(--primary-color)) center / 8px 8px no-repeat #fff;
+    }
+
+    .input {
+      width: 898px;
+      height: 32px;
+      padding: 4px 11px;
+      border: 1px solid var(--border-color);
+      border-radius: 0;
+      color: var(--text-color);
+      outline: none;
+    }
+
+    .input::placeholder {
+      color: #bfbfbf;
+    }
+
+    .input:focus {
+      border-color: var(--primary-color);
+    }
+
+    .zone-combos {
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .stack-field {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .select {
+      width: 898px;
+      height: 32px;
+      padding: 0 11px;
+      border: 1px solid var(--border-color);
+      border-radius: 0;
+      background: #fff;
+      color: var(--text-color);
+      outline: none;
+    }
+
+    .select:focus {
+      border-color: var(--primary-color);
+    }
+
+    .field-hint {
+      color: var(--muted-color);
+      line-height: 22px;
+    }
+
+    .alert-block {
+      width: 898px;
+      padding: 8px 12px;
+      border: 1px solid #d6e4ff;
+      background: #f7faff;
+      color: #595959;
+      line-height: 22px;
+    }
+
+    .alert-block strong {
+      color: #262626;
+      font-weight: 600;
+    }
+
+    .table-wrap {
+      width: 898px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      height: 39px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--table-border);
+      text-align: center;
+      font-weight: 400;
+    }
+
+    th {
+      background: #fafafa;
+      color: #262626;
+      font-weight: 500;
+    }
+
+    th:first-child,
+    td:first-child {
+      width: 64px;
+    }
+
+    tbody tr:hover {
+      background: #fafafa;
+    }
+
+    .actions {
+      width: 898px;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      min-width: 64px;
+      height: 32px;
+      padding: 4px 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 0;
+      background: #fff;
+      color: var(--text-color);
+      font-size: 14px;
+      line-height: 22px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      border-color: var(--primary-color);
+      background: var(--primary-color);
+      color: #fff;
+    }
+
+    .btn:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    .btn-primary:hover {
+      color: #fff;
+      background: #40a9ff;
+      border-color: #40a9ff;
+    }
+
+    .message {
+      display: none;
+      width: 898px;
+      margin: 0 0 16px 304px;
+      padding: 8px 12px;
+      border: 1px solid #91d5ff;
+      background: #e6f7ff;
+      color: #0050b3;
+    }
+
+    .message.error {
+      border-color: #ffccc7;
+      background: #fff2f0;
+      color: #cf1322;
+    }
+
+    .float-tool {
+      position: fixed;
+      right: 16px;
+      bottom: 100px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary-color);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+      font-size: 20px;
+    }
+
+    @media (max-width: 1500px) {
+      .form {
+        margin-left: 80px;
+      }
+
+      .message {
+        margin-left: 184px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <span>Panther</span>
+    </div>
+    <nav class="top-menu">
+      <span class="top-item"><span class="top-icon">⌂</span>控制台</span>
+      <span class="top-item"><span class="top-icon">⌘</span>全部产品</span>
+      <span class="top-item"><span class="top-icon">∫</span>Flux DevOps</span>
+      <span class="top-item"><span class="top-icon">▰</span>Redis</span>
+      <span class="top-item"><span class="top-icon">▣</span>负载均衡 SCLB</span>
+      <span class="top-item"><span class="top-icon">☷</span>CMDB</span>
+      <span class="top-item"><span class="top-icon">☁</span>CVM</span>
+    </nav>
+    <div class="top-search"><span>⌕</span><span>支持输入关键词搜索产品和文档</span><span>×</span></div>
+    <div class="top-actions">
+      <span>♟ 业务账号</span>
+      <span>▣ 业务账单</span>
+      <span>♧ 工单</span>
+      <span>▰ 值班</span>
+      <span>▥ 学习中心</span>
+      <span>♧ 通知</span>
+      <span><span class="avatar">王</span> 王铭浩</span>
+    </div>
+  </header>
+
+  <aside class="sidebar">
+    <div class="side-title">负载均衡 SCLB</div>
+    <ul class="side-menu">
+      <li class="side-item">⌘ 概览页</li>
+      <li class="side-item group">♧ 四层负载均衡 <span style="margin-left:auto;">⌃</span></li>
+      <li class="side-item active">实例管理</li>
+      <li class="side-item sub">服务器组</li>
+      <li class="side-item">☷ 七层应用网关 <span style="margin-left:auto;">⌄</span></li>
+      <li class="side-item">↺ 托管实例 <span style="margin-left:auto;">⌄</span></li>
+      <li class="side-item">⚙ 告警策略管理 <span style="margin-left:auto;">⌄</span></li>
+      <li class="side-item">▧ 申请管理 <span style="margin-left:auto;">⌄</span></li>
+    </ul>
+    <div class="side-collapse">‹</div>
+  </aside>
+
+  <div class="layout">
+    <main class="main">
+      <header class="page-header">
+        <h1 class="page-title">实例申请</h1>
+        <button class="btn btn-primary" type="button">返回</button>
+      </header>
+
+      <section class="page-content">
+        <div id="message" class="message"></div>
+
+        <form class="form" id="applyForm">
+          <div class="form-row">
+            <label class="form-label"><span class="required">*</span>网络类型：</label>
+            <div class="control-line">
+              <label class="radio">
+                <input type="radio" name="networkType" value="内网" checked />
+                <span>内网</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label"><span class="required">*</span>实例类型：</label>
+            <div class="stack-field">
+              <div class="control-line">
+                <label class="radio">
+                  <input type="radio" name="instanceType" value="用户集群" checked />
+                  <span>用户集群</span>
+                </label>
+                <label class="radio">
+                  <input type="radio" name="instanceType" value="SCLB集群" />
+                  <span>SCLB集群</span>
+                </label>
+              </div>
+              <div class="field-hint" id="instanceTypeHint">用户集群类型实例无法获取客户端实IP。</div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label"><span class="required">*</span>VIP机房：</label>
+            <div class="stack-field">
+              <div class="zone-combos">
+                <label class="checkbox">
+                  <input class="native-checkbox" type="checkbox" name="vipRoom" value="亦庄" checked />
+                  <span>亦庄</span>
+                </label>
+                <label class="checkbox">
+                  <input class="native-checkbox" type="checkbox" name="vipRoom" value="金山云" />
+                  <span>金山云</span>
+                </label>
+              </div>
+              <div id="userClusterAlerts">
+                <div class="alert-block">
+                  VIP机房的选择会影响网关实例的部署节点选取。请确保所选资源包对应的集群中有处于 VIP 机房的节点，否则可能影响网关实例的部署或跨机房多活。
+                  <br />
+                  部署时会给集群中的部分节点打上标签：<strong>sclb-yz-label</strong>、<strong>sclb-jsy-label</strong>，请勿删除这些标签。
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label"><span class="required">*</span>集群名称：</label>
+            <div class="stack-field">
+              <select class="select" id="clusterName">
+                <option value="">请选择</option>
+                <option value="feed-user-cluster-prod">feed-user-cluster-prod</option>
+                <option value="news-user-cluster-prod">news-user-cluster-prod</option>
+                <option value="sclb-shared-cluster-prod">sclb-shared-cluster-prod</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label"><span class="required">*</span>实例名称：</label>
+            <div class="control-line">
+              <input class="input" id="instanceName" type="text" placeholder="请输入" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label"><span class="required">*</span>实例规格：</label>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>规格</th>
+                    <th>最大并发连接数</th>
+                    <th>每秒新建连接数</th>
+                    <th>每秒查询个数</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><input type="radio" name="spec" value="基础型" /></td>
+                    <td>基础型</td>
+                    <td>50000</td>
+                    <td>2000</td>
+                    <td>30000</td>
+                  </tr>
+                  <tr>
+                    <td><input type="radio" name="spec" value="标准型" /></td>
+                    <td>标准型</td>
+                    <td>60000</td>
+                    <td>2000</td>
+                    <td>50000</td>
+                  </tr>
+                  <tr>
+                    <td><input type="radio" name="spec" value="增强型" /></td>
+                    <td>增强型</td>
+                    <td>120000</td>
+                    <td>4000</td>
+                    <td>100000</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-primary" type="submit">提交</button>
+            <button class="btn" type="reset">取消</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <div class="float-tool">⌘</div>
+
+    <script>
+    const form = document.getElementById("applyForm");
+    const message = document.getElementById("message");
+    const instanceName = document.getElementById("instanceName");
+    const clusterName = document.getElementById("clusterName");
+    const instanceTypeHint = document.getElementById("instanceTypeHint");
+    const userClusterAlerts = document.getElementById("userClusterAlerts");
+
+    function checkedValue(name) {
+      const checked = document.querySelector(`input[name="${name}"]:checked`);
+      return checked ? checked.value : "";
+    }
+
+    function checkedValues(name) {
+      return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map((item) => item.value);
+    }
+
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = `message ${type === "error" ? "error" : ""}`;
+      message.style.display = "block";
+    }
+
+    function syncAlertVisibility() {
+      const instanceType = checkedValue("instanceType");
+      instanceTypeHint.textContent = instanceType === "SCLB集群"
+        ? "SCLB集群类型实例暂不支持发现 DomeOS 服务。"
+        : "用户集群类型实例无法获取客户端实IP。";
+      userClusterAlerts.style.display = instanceType === "用户集群" ? "block" : "none";
+    }
+
+    form.addEventListener("change", (event) => {
+      if (event.target.name === "instanceType") {
+        syncAlertVisibility();
+      }
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const instanceType = checkedValue("instanceType");
+      const vipRooms = checkedValues("vipRoom");
+      const spec = checkedValue("spec");
+      const name = instanceName.value.trim();
+      const cluster = clusterName.value;
+
+      if (!vipRooms.length || !cluster || !name || !spec) {
+        showMessage("请完整填写 VIP机房、集群名称、实例名称和实例规格。", "error");
+        return;
+      }
+
+      const vipRoomText = vipRooms.join("、");
+      showMessage(`已提交：${name}，实例类型 ${instanceType}，VIP机房 ${vipRoomText}，集群 ${cluster}，实例规格 ${spec}。`, "success");
+    });
+
+    form.addEventListener("reset", () => {
+      window.setTimeout(() => {
+        message.style.display = "none";
+        syncAlertVisibility();
+      }, 0);
+    });
+
+    syncAlertVisibility();
+  </script>
+</body>
+</html>
